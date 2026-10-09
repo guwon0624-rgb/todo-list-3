@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="달력과 시계가 맞물린 할 일 앱 하루판" />
+    <title>하루판 · 달력 할 일</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23e25b45'/%3E%3Cpath d='M8 16.5 13 21.5 24 10' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="white" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12.5 9.2 17 19 7" />
+            </svg>
+          </div>
+          <div>
+            <h1>하루판</h1>
+            <p class="tagline">달력, 시계, 할 일이 한자리에서 맞춰집니다</p>
+          </div>
+        </div>
+        <div class="header-tools">
+          <label class="search">
+            <span class="sr-only">할 일 검색</span>
+            <input id="searchInput" type="search" placeholder="할 일, 메모 검색" autocomplete="off" />
+          </label>
+          <button type="button" class="clock-btn" id="goTodayBtn" aria-label="현재 시각. 누르면 오늘 날짜로 이동합니다">
+            <span class="clock-face" aria-hidden="true">
+              <span class="mark m12">12</span>
+              <span class="mark m3">3</span>
+              <span class="mark m6">6</span>
+              <span class="mark m9">9</span>
+              <span class="hand hour" id="hourHand"></span>
+              <span class="hand minute" id="minuteHand"></span>
+              <span class="hand second" id="secondHand"></span>
+              <span class="cap"></span>
+            </span>
+            <span class="clock-readout">
+              <strong class="clock-time"><span id="clockHm">--:--</span><span id="clockSec" class="clock-sec">--</span></strong>
+              <span id="clockDate">오늘 날짜</span>
+              <span id="watchingDate">보는 날</span>
+              <span class="clock-jump">오늘로 이동</span>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <section class="stats" aria-label="할 일 요약">
+        <button type="button" class="stat" data-mode="all">
+          <span class="stat-kicker"><i class="swatch ink"></i>전체</span>
+          <strong id="statAll">0</strong>
+        </button>
+        <button type="button" class="stat" id="statTodayBtn">
+          <span class="stat-kicker"><i class="swatch coral"></i>오늘 남음</span>
+          <strong id="statToday">0</strong>
+          <span class="meter" aria-hidden="true"><span id="todayMeter"></span></span>
+        </button>
+        <button type="button" class="stat" data-mode="done">
+          <span class="stat-kicker"><i class="swatch teal"></i>완료</span>
+          <strong id="statDone">0</strong>
+        </button>
+        <button type="button" class="stat" data-mode="overdue">
+          <span class="stat-kicker"><i class="swatch gold"></i>지연</span>
+          <strong id="statOverdue">0</strong>
+        </button>
+      </section>
+
+      <main class="layout">
+        <section class="card calendar-card" id="calendarCard">
+          <div class="cal-toolbar">
+            <button type="button" class="nav-btn" id="prevMonth" aria-label="이전 달">‹</button>
+            <div class="month-title">
+              <h2 id="monthLabel">달력</h2>
+              <p id="monthCount"></p>
+            </div>
+            <button type="button" class="nav-btn" id="nextMonth" aria-label="다음 달">›</button>
+            <button type="button" class="today-btn" id="todayBtn">오늘</button>
+          </div>
+          <div class="legend" id="legend" role="group" aria-label="분류 필터"></div>
+          <div class="weekdays" id="weekdays" aria-hidden="true"></div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <p class="hint">일정을 끌어 다른 날에 놓거나, 일정을 누른 뒤 <b>날짜 이동</b>으로 옮길 수 있어요. 방향키로 달을 넘깁니다.</p>
+        </section>
+
+        <section class="card tasks-card">
+          <div class="tasks-head">
+            <div>
+              <p class="eyebrow" id="tasksEyebrow">선택한 날짜</p>
+              <h2 id="tasksTitle">할 일</h2>
+              <p class="sub" id="tasksSub"></p>
+            </div>
+            <div class="tasks-head-side">
+              <p class="panel-clock" id="panelClock" hidden>지금</p>
+              <button type="button" class="ghost slim" id="focusDate">달력에서 보기</button>
+            </div>
+          </div>
+
+          <div class="list-tools">
+            <div class="tabs" id="taskTabs" role="tablist" aria-label="할 일 목록">
+              <button type="button" role="tab" data-mode="day" aria-selected="true">이 날짜</button>
+              <button type="button" role="tab" data-mode="upcoming" aria-selected="false">앞으로</button>
+              <button type="button" role="tab" data-mode="overdue" aria-selected="false">지연</button>
+              <button type="button" role="tab" data-mode="done" aria-selected="false">완료</button>
+              <button type="button" role="tab" data-mode="all" aria-selected="false">전체</button>
+            </div>
+            <select id="priorityFilter" aria-label="우선순위 필터">
+              <option value="all">모든 우선순위</option>
+              <option value="high">높음</option>
+              <option value="medium">보통</option>
+              <option value="low">낮음</option>
+            </select>
+          </div>
+
+          <p class="quick-date">이 날에 추가 · <strong id="quickDateLabel"></strong></p>
+          <div class="quick-cats" id="quickCats" role="group" aria-label="새 할 일 분류"></div>
+          <form id="quickAdd" class="quick-add" autocomplete="off">
+            <input id="quickTitle" name="title" type="text" maxlength="80" placeholder="할 일을 입력하세요" required />
+            <input id="quickTime" name="time" type="time" aria-label="시간" />
+            <div class="quick-buttons">
+              <button type="submit" class="primary" id="addBtn">추가</button>
+              <button type="button" class="ghost" id="openDetail">자세히</button>
+            </div>
+          </form>
+
+          <div id="dayline" class="dayline" hidden></div>
+          <div id="taskList" class="task-list"></div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span class="sync-status" id="syncStatus" data-state="connecting">
+          <i aria-hidden="true"></i>
+          <span id="syncStatusText">Firebase 연결 중</span>
+        </span>
+        <span>일정은 Firebase Realtime Database에 실시간 동기화되며, 연결할 수 없을 때는 이 브라우저에 안전하게 보관됩니다.</span>
+      </footer>
+    </div>
+
+    <div id="popover" class="popover" hidden>
+      <p class="popover-kicker">달력 일정</p>
+      <p id="popoverTitle" class="popover-title"></p>
+      <p id="popoverMeta" class="popover-meta"></p>
+      <div class="popover-actions">
+        <button type="button" data-action="toggle" id="popoverToggle">완료</button>
+        <button type="button" data-action="edit">수정</button>
+        <button type="button" data-action="move">날짜 이동</button>
+        <button type="button" data-action="delete" class="danger">삭제</button>
+      </div>
+    </div>
+
+    <form id="moveBanner" class="move-banner" hidden>
+      <p class="move-copy"><strong id="moveName"></strong> 일정을 옮기는 중이에요. 달력의 날짜를 누르거나, 여기서 고르세요.</p>
+      <label class="move-date">날짜
+        <input type="date" id="moveDateInput" required />
+      </label>
+      <button type="submit" class="primary">이 날짜로</button>
+      <button type="button" class="ghost light" id="cancelMove">취소</button>
+    </form>
+
+    <dialog id="editor">
+      <form id="editorForm" class="sheet" autocomplete="off">
+        <h2 id="editorHeading">할 일 추가</h2>
+        <label class="field">
+          <span>할 일</span>
+          <input name="title" type="text" maxlength="80" required placeholder="무엇을 할까요?" />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span>날짜</span>
+            <input name="date" type="date" required />
+          </label>
+          <label class="field">
+            <span>시간</span>
+            <input name="time" type="time" />
+          </label>
+        </div>
+        <fieldset class="choices cats" id="categoryFields">
+          <legend>분류</legend>
+        </fieldset>
+        <fieldset class="choices priorities">
+          <legend>우선순위</legend>
+          <label><input type="radio" name="priority" value="high" /> 높음</label>
+          <label><input type="radio" name="priority" value="medium" checked /> 보통</label>
+          <label><input type="radio" name="priority" value="low" /> 낮음</label>
+        </fieldset>
+        <label class="field">
+          <span>메모</span>
+          <textarea name="notes" rows="3" maxlength="400" placeholder="필요한 메모가 있으면 적어 두세요"></textarea>
+        </label>
+        <label class="checkline">
+          <input name="completed" type="checkbox" />
+          완료로 표시
+        </label>
+        <div class="dialog-actions">
+          <button type="button" id="editorDelete" class="danger" hidden>삭제</button>
+          <span class="spacer"></span>
+          <button type="button" class="ghost" id="editorCancel">취소</button>
+          <button type="submit" class="primary">저장</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="confirmDialog">
+      <form id="confirmForm" class="sheet confirm-sheet">
+        <h2>할 일 삭제</h2>
+        <p id="confirmText"></p>
+        <div class="dialog-actions">
+          <span class="spacer"></span>
+          <button type="button" class="ghost" id="confirmCancel">취소</button>
+          <button type="submit" class="danger-solid">삭제</button>
+        </div>
+      </form>
+    </dialog>
+
+    <p id="toast" class="toast" hidden role="status"></p>
+    <noscript>자바스크립트를 켜면 할 일 앱을 사용할 수 있어요.</noscript>
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
